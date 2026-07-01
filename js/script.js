@@ -334,6 +334,7 @@
         extra.address = rest.address || "";
         if (rest.lat != null) extra.lat = rest.lat;
         if (rest.lng != null) extra.lng = rest.lng;
+        extra.restaurantRowId = rest.id;
       }
     }
 
