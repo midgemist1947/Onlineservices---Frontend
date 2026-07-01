@@ -476,11 +476,65 @@
     if (error) toast("Google sign-in failed. Try again.");
   });
 
+   document.getElementById("rmRole").addEventListener("change", (e) => {
+    document.getElementById("rmRegWrap").hidden = e.target.value !== "ngo";
+    document.getElementById("rmAddressWrap").hidden = e.target.value !== "restaurant";
+  });
+
+  document.getElementById("roleForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById("rmError");
+    const role = document.getElementById("rmRole").value;
+    const phone = document.getElementById("rmPhone").value.trim();
+    const ngoReg = document.getElementById("rmReg").value.trim();
+    const address = document.getElementById("rmAddress").value.trim();
+
+    if (!phone) { errEl.textContent = "Phone number is required."; return; }
+    if (role === "ngo" && !ngoReg) { errEl.textContent = "NGO registration number is required."; return; }
+    if (role === "restaurant" && !address) { errEl.textContent = "Please enter your restaurant/shop address."; return; }
+    errEl.textContent = "";
+
+    const { data: authData } = await db.auth.getUser();
+    const authUserId = authData.user.id;
+
+    await db.from("profiles").update({ role, phone, role_selected: true }).eq("id", authUserId);
+
+    if (role === "restaurant") {
+      await db.from("restaurants").insert({
+        user_id: authUserId,
+        name: authData.user.user_metadata?.full_name || authData.user.email,
+        phone, address,
+        lat: jitter(DEFAULT_LAT, 2), lng: jitter(DEFAULT_LNG, 2),
+      });
+    }
+
+    document.getElementById("roleModal").style.display = "none";
+
+    const user = await loadUserFromSupabase(authUserId);
+    if (user && role === "ngo") { user.ngoReg = ngoReg; user.ngoVerified = true; }
+    if (user) {
+      const users = store.get(DB_USERS, []).filter((u) => u.id !== authUserId);
+      users.push(user);
+      store.set(DB_USERS, users);
+      setSession(user.id);
+    }
+    refreshAuthUI();
+    renderNotifications();
+    toast("Profile completed!");
+    navigateTo("dashboard");
+  });
+
   /* ---------- handle returning from Google login ---------- */
   (async function checkGoogleRedirect() {
     const { data } = await db.auth.getUser();
     if (!data?.user) return;
     if (getSession()) return; // already logged in locally, nothing to do
+
+   const { data: profile } = await db.from("profiles").select("role_selected").eq("id", data.user.id).maybeSingle();
+    if (profile && profile.role_selected === false) {
+      document.getElementById("roleModal").style.display = "flex";
+      return;
+    }
 
     const user = await loadUserFromSupabase(data.user.id);
     if (!user) return;
