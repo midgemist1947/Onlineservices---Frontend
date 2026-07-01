@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 450" fill="none">
+<defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#E85D2C" stop-opacity=".15"/><stop offset="100%" stop-color="#2A9D8F" stop-opacity=".15"/></linearGradient><linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#E85D2C" stop-opacity=".2"/><stop offset="100%" stop-color="#F4A261" stop-opacity=".2"/></linearGradient></defs>
+<circle cx="250" cy="225" r="200" fill="url(#g1)"/><circle cx="250" cy="225" r="150" fill="url(#g2)"/>
+<ellipse cx="250" cy="280" rx="120" ry="40" fill="#264653" opacity=".08"/>
+<circle cx="250" cy="240" r="80" fill="#FFF5EB" stroke="#E85D2C" stroke-width="2" stroke-dasharray="8 4" opacity=".9"/>
+<circle cx="250" cy="240" r="65" fill="#FFF5EB" stroke="#E0E0E0" stroke-width="1.5"/>
+<ellipse cx="230" cy="235" rx="20" ry="12" fill="#F4A261" opacity=".9"/>
+<ellipse cx="270" cy="240" rx="18" ry="10" fill="#E85D2C" opacity=".8"/>
+<circle cx="250" cy="228" r="10" fill="#2A9D8F" opacity=".85"/>
+<ellipse cx="240" cy="250" rx="15" ry="6" fill="#E9C46A" opacity=".9"/>
+<path d="M240 215Q242 200 238 190" stroke="#F4A261" stroke-width="2" fill="none" opacity=".5"><animate attributeName="d" values="M240 215Q242 200 238 190;M240 215Q238 200 242 190;M240 215Q242 200 238 190" dur="3s" repeatCount="indefinite"/></path>
+<path d="M255 215Q257 202 253 192" stroke="#F4A261" stroke-width="2" fill="none" opacity=".5"><animate attributeName="d" values="M255 215Q257 202 253 192;M255 215Q253 202 257 192;M255 215Q257 202 253 192" dur="2.5s" repeatCount="indefinite"/></path>
+<path d="M248 218Q250 205 246 195" stroke="#E85D2C" stroke-width="1.5" fill="none" opacity=".4"><animate attributeName="d" values="M248 218Q250 205 246 195;M248 218Q246 205 250 195;M248 218Q250 205 246 195" dur="3.5s" repeatCount="indefinite"/></path>
+<line x1="320" y1="200" x2="350" y2="170" stroke="#264653" stroke-width="3" stroke-linecap="round"/>
+<path d="M345 165l3 5M350 162l3 8M355 165l3 5" stroke="#264653" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="100" cy="100" r="15" fill="#F4A261" opacity=".3"><animate attributeName="r" values="15;18;15" dur="4s" repeatCount="indefinite"/></circle>
+<circle cx="400" cy="120" r="12" fill="#2A9D8F" opacity=".25"><animate attributeName="r" values="12;15;12" dur="3.5s" repeatCount="indefinite"/></circle>
+<circle cx="130" cy="350" r="10" fill="#E9C46A" opacity=".3"><animate attributeName="r" values="10;13;10" dur="5s" repeatCount="indefinite"/></circle>
+<circle cx="380" cy="340" r="14" fill="#E85D2C" opacity=".2"><animate attributeName="r" values="14;17;14" dur="4.5s" repeatCount="indefinite"/></circle>
+<circle cx="160" cy="180" r="4" fill="#2A9D8F" opacity=".4"/><circle cx="150" cy="140" r="3" fill="#E85D2C" opacity=".3"/>
+<circle cx="340" cy="180" r="4" fill="#F4A261" opacity=".4"/><circle cx="360" cy="140" r="3" fill="#2A9D8F" opacity=".3"/>
+<text x="250" y="350" text-anchor="middle" font-family="'Segoe UI',Arial,sans-serif" font-size="18" font-weight="600" fill="#264653" opacity=".7">Save Food • Save Planet</text>
+</svg>
