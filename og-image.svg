@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1B1712"/>
+      <stop offset="1" stop-color="#241E16"/>
+    </linearGradient>
+    <linearGradient id="sparkGradOg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E0936A"/>
+      <stop offset="1" stop-color="#A8512E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="35%" r="65%">
+      <stop offset="0" stop-color="#C7693F" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#C7693F" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- subtle grid texture -->
+  <g opacity="0.05" stroke="#F7F4EE" stroke-width="1">
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="480" x2="1200" y2="480"/>
+  </g>
+
+  <!-- spark mark -->
+  <path transform="translate(560,118) scale(1.35)" d="M32 10 C34.5 24 40 29.5 54 32 C40 34.5 34.5 40 32 54 C29.5 40 24 34.5 10 32 C24 29.5 29.5 24 32 10 Z" fill="url(#sparkGradOg)"/>
+
+  <text x="600" y="330" text-anchor="middle" font-family="Georgia, 'Fraunces', serif" font-size="74" fill="#F7F4EE" font-weight="600">Nova</text>
+  <text x="600" y="385" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" letter-spacing="2" fill="#B9AE9B">A CALMER WAY TO TALK TO AI</text>
+
+  <g transform="translate(450,440)" fill="none" stroke="#3A3226" stroke-width="1.5">
+    <rect x="0" y="0" width="300" height="56" rx="28"/>
+  </g>
+  <circle cx="466" cy="468" r="5" fill="#C7693F"/>
+  <text x="486" y="474" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#8B8270">Message Nova…</text>
+</svg>

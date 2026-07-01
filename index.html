@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Nova — A calmer way to talk to AI</title>
+<meta name="description" content="Nova is a premium, open-source AI chat interface. Bring your own API key and start talking.">
+
+<!-- Open Graph -->
+<meta property="og:title" content="Nova — A calmer way to talk to AI">
+<meta property="og:description" content="A premium, open-source AI chat interface. Bring your own API key and start talking.">
+<meta property="og:image" content="og-image.svg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M32 10 C34.5 24 40 29.5 54 32 C40 34.5 34.5 40 32 54 C29.5 40 24 34.5 10 32 C24 29.5 29.5 24 32 10 Z"/>
+        </svg>
+        <span class="brand-name">Nova</span>
+      </div>
+      <button class="icon-btn sidebar-collapse" id="collapseSidebar" title="Collapse sidebar" aria-label="Collapse sidebar">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+      </button>
+    </div>
+
+    <button class="new-chat-btn" id="newChatBtn">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      New chat
+    </button>
+
+    <div class="sidebar-search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Search conversations">
+    </div>
+
+    <nav class="conversation-list" id="conversationList" aria-label="Conversations"></nav>
+
+    <div class="sidebar-bottom">
+      <button class="sidebar-account" id="settingsBtn">
+        <span class="account-avatar">N</span>
+        <span class="account-info">
+          <span class="account-name">Workspace</span>
+          <span class="account-sub" id="apiStatusLabel">No API key set</span>
+        </span>
+        <svg class="account-gear" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 13a7.6 7.6 0 000-2l2-1.6-2-3.4-2.4 1a7.7 7.7 0 00-1.7-1L15 3h-6l-.3 2.6a7.7 7.7 0 00-1.7 1l-2.4-1-2 3.4L4.6 11a7.6 7.6 0 000 2l-2 1.6 2 3.4 2.4-1a7.7 7.7 0 001.7 1L9 21h6l.3-2.6a7.7 7.7 0 001.7-1l2.4 1 2-3.4-2-1.6z"/></svg>
+        </button>
+    </div>
+  </aside>
+
+  <button class="mobile-overlay" id="mobileOverlay" aria-hidden="true"></button>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn mobile-menu" id="mobileMenuBtn" aria-label="Open sidebar">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+
+      <div class="model-picker" id="modelPicker">
+        <button class="model-picker-btn" id="modelPickerBtn" aria-haspopup="listbox" aria-expanded="false">
+          <span id="currentModelName">Nova 2 — Balanced</span>
+          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <ul class="model-dropdown" id="modelDropdown" role="listbox" hidden>
+          <li role="option" data-model="Nova 2 — Balanced"><strong>Nova 2 — Balanced</strong><span>Great for everyday conversation</span></li>
+          <li role="option" data-model="Nova 2 — Swift"><strong>Nova 2 — Swift</strong><span>Fast answers, lighter reasoning</span></li>
+          <li role="option" data-model="Nova 2 — Deep"><strong>Nova 2 — Deep</strong><span>Slower, more thorough reasoning</span></li>
+        </ul>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="icon-btn" id="themeToggle" title="Toggle theme" aria-label="Toggle color theme">
+          <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" hidden><path d="M20 14.5A8.5 8.5 0 119.5 4 7 7 0 0020 14.5z"/></svg>
+        </button>
+        <button class="icon-btn" id="settingsBtnTop" title="Settings" aria-label="Open settings">
+          <svg viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 13a7.6 7.6 0 000-2l2-1.6-2-3.4-2.4 1a7.7 7.7 0 00-1.7-1L15 3h-6l-.3 2.6a7.7 7.7 0 00-1.7 1l-2.4-1-2 3.4L4.6 11a7.6 7.6 0 000 2l-2 1.6 2 3.4 2.4-1a7.7 7.7 0 001.7 1L9 21h6l.3-2.6a7.7 7.7 0 001.7-1l2.4 1 2-3.4-2-1.6z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Empty state -->
+    <section class="empty-state" id="emptyState">
+      <svg class="empty-mark" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M32 10 C34.5 24 40 29.5 54 32 C40 34.5 34.5 40 32 54 C29.5 40 24 34.5 10 32 C24 29.5 29.5 24 32 10 Z"/>
+      </svg>
+      <h1 class="empty-title">What's on your mind?</h1>
+      <p class="empty-sub">Add your API key in settings, then start a conversation below.</p>
+
+      <div class="suggestion-grid" id="suggestionGrid">
+        <button class="suggestion-card" data-prompt="Explain quantum computing the way you'd explain it to a curious 12-year-old.">
+          <span class="suggestion-label">Explain simply</span>
+          Explain quantum computing to a curious 12-year-old
+        </button>
+        <button class="suggestion-card" data-prompt="Write a short, warm thank-you note to a mentor who helped me early in my career.">
+          <span class="suggestion-label">Write</span>
+          Draft a thank-you note to a mentor
+        </button>
+        <button class="suggestion-card" data-prompt="Give me a 3-day beginner workout plan I can do at home with no equipment.">
+          <span class="suggestion-label">Plan</span>
+          Build a 3-day home workout plan
+        </button>
+        <button class="suggestion-card" data-prompt="Review this paragraph and suggest three ways to make it more concise: 'I am writing to inform you that...'">
+          <span class="suggestion-label">Improve</span>
+          Tighten up a paragraph of writing
+        </button>
+      </div>
+    </section>
+
+    <!-- Message thread -->
+    <section class="thread" id="thread" hidden></section>
+
+    <!-- Composer -->
+    <form class="composer" id="composerForm">
+      <div class="composer-inner">
+        <button type="button" class="composer-icon-btn" id="attachBtn" title="Attach (not wired yet)" aria-label="Attach a file">
+          <svg viewBox="0 0 24 24"><path d="M21 11.5l-9 9a5 5 0 01-7-7l9-9a3.5 3.5 0 015 5l-9 9a2 2 0 01-3-3l8-8"/></svg>
+        </button>
+        <textarea id="messageInput" rows="1" placeholder="Message Nova…" aria-label="Message"></textarea>
+        <button type="submit" class="send-btn" id="sendBtn" disabled aria-label="Send message">
+          <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </button>
+      </div>
+      <p class="composer-hint">Nova can make mistakes. Connect an API key in settings to bring this to life. <span class="composer-key-pill" id="composerKeyPill"></span></p>
+    </form>
+  </main>
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div class="modal-backdrop" id="settingsBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-header">
+      <h2 id="settingsTitle">Settings</h2>
+      <button class="icon-btn" id="closeSettings" aria-label="Close settings">
+        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="settings-group">
+        <label for="apiKeyInput">API key</label>
+        <div class="api-key-row">
+          <input type="password" id="apiKeyInput" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+          <button type="button" class="ghost-btn" id="toggleKeyVisibility">Show</button>
+        </div>
+        <p class="settings-hint">
+          Stored only in this browser's local storage — never sent anywhere by this page.
+          Note: calling a model API directly from a static page exposes the key to anyone
+          inspecting network traffic, and most providers block direct browser requests (CORS).
+          For production use, proxy requests through a small backend. See <code>script.js</code> →
+          <code>requestAssistantReply()</code> for where to wire this up.
+        </p>
+      </div>
+
+      <div class="settings-group">
+        <label for="endpointInput">API endpoint</label>
+        <input type="text" id="endpointInput" placeholder="https://your-proxy.example.com/v1/messages">
+      </div>
+
+      <div class="settings-group toggle-row">
+        <div>
+          <label>Sound on send</label>
+          <p class="settings-hint">Play a soft tone when a message is sent.</p>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="soundToggle">
+          <span class="switch-track"></span>
+        </label>
+      </div>
+
+      <div class="settings-group">
+        <button class="danger-btn" id="clearDataBtn">Clear all conversations</button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="primary-btn" id="saveSettingsBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
