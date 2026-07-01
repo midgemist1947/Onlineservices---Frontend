@@ -467,7 +467,7 @@
   });
   */
 
-   document.getElementById("google-signup").addEventListener("click", async () => {
+   document.getElementById("google-login").addEventListener("click", async () => {
     const { error } = await db.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: "https://onlineforall.run.place/#dashboard" },
