@@ -518,6 +518,17 @@
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const { createClient } = supabase;
+  const db = createClient(
+    'https://ombsevffmkgilltlueeh.supabase.co',
+    'sb_publishable_Cf7DOyGcnTdv0OreKUEJXA_Ghmb8uPY'
+  );
+</script>
+  
 <script src="js/script.js"></script>
+  
 </body>
 </html>
