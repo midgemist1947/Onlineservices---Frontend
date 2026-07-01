@@ -467,6 +467,32 @@
   });
   */
 
+   document.getElementById("google-signup").addEventListener("click", async () => {
+    const { error } = await db.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: "https://onlineforall.run.place/#dashboard" },
+    });
+    if (error) toast("Google sign-in failed. Try again.");
+  });
+
+  /* ---------- handle returning from Google login ---------- */
+  (async function checkGoogleRedirect() {
+    const { data } = await db.auth.getUser();
+    if (!data?.user) return;
+    if (getSession()) return; // already logged in locally, nothing to do
+
+    const user = await loadUserFromSupabase(data.user.id);
+    if (!user) return;
+
+    const users = store.get(DB_USERS, []).filter((u) => u.id !== user.id);
+    users.push(user);
+    store.set(DB_USERS, users);
+    setSession(user.id);
+    refreshAuthUI();
+    renderNotifications();
+    toast(`Welcome, ${user.name || "there"}!`);
+  })();
+
 
    document.getElementById("signupForm").addEventListener("submit", async (e) => {
     e.preventDefault();
