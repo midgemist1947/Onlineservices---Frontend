@@ -790,12 +790,12 @@
     );
   });
 
-  document.getElementById("listingForm").addEventListener("submit", (e) => {
+
+   document.getElementById("listingForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const user = getSession();
     if (!user || user.role !== "restaurant") return;
     const errEl = document.getElementById("lfError");
-
     const item = document.getElementById("lfItem").value.trim();
     const qty = Number(document.getElementById("lfQty").value);
     const unit = document.getElementById("lfUnit").value;
@@ -805,7 +805,6 @@
     const windowMin = Number(document.getElementById("lfWindow").value);
     const address = document.getElementById("lfAddress").value.trim();
     const safetyOk = document.getElementById("lfSafetyConfirm").checked;
-
     if (!item || !qty || !windowMin || !address) {
       errEl.textContent = "Please fill in all required fields.";
       return;
@@ -818,26 +817,63 @@
       errEl.textContent = "Please confirm the hygiene & safety checkbox before publishing.";
       return;
     }
+    if (!user.restaurantRowId) {
+      errEl.textContent = "Couldn't find your restaurant profile. Try logging out and back in.";
+      return;
+    }
     errEl.textContent = "";
 
     const loc = pendingListingLoc || { lat: user.lat, lng: user.lng };
+    const isNgoOnly = document.getElementById("lfNgoOnly").checked;
+    const expiresAtIso = new Date(Date.now() + windowMin * 60000).toISOString();
+    const originalPrice = isDonation ? 0 : Math.round(price * 2);
+
+    const { data: inserted, error } = await db
+      .from("listings")
+      .insert({
+        restaurant_id: user.restaurantRowId,
+        restaurant_name: user.name,
+        food_item: item,
+        quantity: qty,
+        unit,
+        price,
+        original_price: originalPrice,
+        is_donation: isDonation,
+        prep_hours: prepHours,
+        window_min: windowMin,
+        ngo_only: isNgoOnly,
+        lat: loc.lat,
+        lng: loc.lng,
+        address,
+        status: "available",
+        expires_at: expiresAtIso,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      errEl.textContent = "Couldn't publish listing: " + error.message;
+      return;
+    }
+
+    // mirror into local store so your dashboard keeps rendering the same way for now
     const listings = store.get(DB_LISTINGS, []);
     const listing = mkListing({
       restaurantId: user.id,
       restaurantName: user.name,
       item, qty, unit,
-      price, originalPrice: isDonation ? 0 : Math.round(price * 2),
+      price, originalPrice,
       prepHours, windowMin, createdAt: now(), address,
-      ngoOnly: document.getElementById("lfNgoOnly").checked,
+      ngoOnly: isNgoOnly,
     });
+    listing.id = inserted.id;
     listing.lat = loc.lat;
     listing.lng = loc.lng;
     listings.push(listing);
     store.set(DB_LISTINGS, listings);
 
-    notifyRole(listing.ngoOnly || isDonation ? "ngo" : "user", `New ${isDonation ? "donation" : "discounted"} listing near you: "${item}" from ${user.name}.`, user.id);
-    if (isDonation || listing.ngoOnly) notifyRole("ngo", `New surplus for NGOs: "${item}" from ${user.name}.`, user.id);
-
+    notifyRole(isNgoOnly || isDonation ? "ngo" : "user", `New ${isDonation ? "donation" : "discounted"} listing near you: "${item}" from ${user.name}.`, user.id);
+    if (isDonation || isNgoOnly) notifyRole("ngo", `New surplus for NGOs: "${item}" from ${user.name}.`, user.id);
     toast("Listing published!");
     e.target.reset();
     lfPriceWrap.hidden = false;
