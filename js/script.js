@@ -1,50 +1,435 @@
-document.addEventListener('DOMContentLoaded',function(){
-  var pl=document.getElementById('preloader');
-  window.addEventListener('load',function(){pl.classList.add('hidden')});
-  setTimeout(function(){if(!pl.classList.contains('hidden'))pl.classList.add('hidden')},2500);
-  var nb=document.getElementById('navbar');
-  window.addEventListener('scroll',function(){nb.classList.toggle('scrolled',window.scrollY>60)});
-  var nt=document.getElementById('navToggle'),nm=document.getElementById('navMenu');
-  nt.addEventListener('click',function(){nt.classList.toggle('active');nm.classList.toggle('active')});
-  nm.querySelectorAll('.nav-link,.nav-cta').forEach(function(l){l.addEventListener('click',function(){nt.classList.remove('active');nm.classList.remove('active')})});
-  var ro=new IntersectionObserver(function(e){e.forEach(function(entry){
-    if(entry.isIntersecting){var d=parseInt(entry.target.dataset.aosDelay)||0;setTimeout(function(){entry.target.classList.add('visible')},d);ro.unobserve(entry.target)}
-  })},{rootMargin:'0px 0px -50px 0px',threshold:.1});
-  document.querySelectorAll('[data-aos]').forEach(function(el){ro.observe(el)});
-  function animCounter(el){var t=parseInt(el.dataset.count);if(isNaN(t))return;var c=0,i=Math.ceil(t/40);var ti=setInterval(function(){c+=i;if(c>=t){c=t;clearInterval(ti)}el.textContent=c.toLocaleString()},30)}
-  var co=new IntersectionObserver(function(e){e.forEach(function(entry){if(entry.isIntersecting){animCounter(entry.target);co.unobserve(entry.target)}})},{threshold:.5});
-  document.querySelectorAll('.stat-number').forEach(function(c){co.observe(c)});
-  var ts=45*60+32,dt=document.getElementById('demoTimer');
-  if(dt)setInterval(function(){if(ts<=0)ts=90*60;ts--;var m=Math.floor(ts/60),s=ts%60;dt.innerHTML='<i class="fas fa-clock"></i> '+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')},1000);
-  window.claimDemo=function(){showToast('🎉 You claimed this listing! Show this at pickup.','success')};
-  var ld=[
-    {id:1,name:'Chicken Biryani Combo (4 pcs)',restaurant:'The Spice House',category:'discounted',price:250,original:600,distance:'1.2 km',time:'55 min left',cuisine:'North Indian'},
-    {id:2,name:'Mixed Veg Thali (6 pcs)',restaurant:'Sagar Delights',category:'donation',price:0,original:null,distance:'0.8 km',time:'35 min left',cuisine:'South Indian'},
-    {id:3,name:'Butter Chicken + Naan (3 pcs)',restaurant:'Punjab Dhaba',category:'discounted',price:180,original:450,distance:'2.5 km',time:'70 min left',cuisine:'North Indian'},
-    {id:4,name:'Fresh Fruit Box (5 pcs)',restaurant:'Green Bowl Cafe',category:'donation',price:0,original:null,distance:'0.5 km',time:'25 min left',cuisine:'Healthy'},
-    {id:5,name:'Idli & Vada Combo (10 pcs)',restaurant:'Udupi Grand',category:'discounted',price:120,original:300,distance:'1.8 km',time:'40 min left',cuisine:'South Indian'},
-    {id:6,name:"Assorted Pastries (8 pcs)",restaurant:"Baker's Treat",category:'discounted',price:160,original:400,distance:'3.1 km',time:'60 min left',cuisine:'Bakery'},
-    {id:7,name:'Dal Makhani + Rice (6 pcs)',restaurant:'Tandoori Nights',category:'donation',price:0,original:null,distance:'2.0 km',time:'45 min left',cuisine:'North Indian'},
-    {id:8,name:'Paneer Roll (4 pcs)',restaurant:'Roll Express',category:'discounted',price:90,original:240,distance:'0.3 km',time:'20 min left',cuisine:'Street Food'}
-  ];
-  var lg=document.getElementById('listingsGrid'),af='all',sq='';
-  function rl(){
-    var f=ld.filter(function(i){return(af==='all'||i.category===af)&&(i.name.toLowerCase().includes(sq)||i.restaurant.toLowerCase().includes(sq)||i.cuisine.toLowerCase().includes(sq))});
-    if(!f.length){lg.innerHTML='<div class="no-results">No listings match. Try a different filter.</div>';return}
-    lg.innerHTML=f.map(function(i){
-      var p=i.category==='donation'?'<span class="li-price free">FREE</span>':'<span class="li-price">₹'+i.price+'</span>';
-      var o=i.original?'<span class="li-original">₹'+i.original+'</span>':'';
-      return '<div class="listing-item '+i.category+'"><span class="li-category">'+(i.category==='discounted'?'Discounted':'Free Donation')+'</span><div class="li-restaurant"><i class="fas fa-store"></i> '+i.restaurant+'</div><div class="li-name">'+i.name+'</div><div class="li-meta"><span><i class="fas fa-location-dot"></i> '+i.distance+'</span><span><i class="fas fa-clock"></i> '+i.time+'</span><span><i class="fas fa-utensils"></i> '+i.cuisine+'</span></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'+p+o+'</div><button class="btn-primary btn-sm" onclick="claimListing('+i.id+')"><i class="fas fa-hand"></i> Claim Now</button></div>'
-    }).join('');
+/* ================= ANNDAAN — script.js ================= */
+"use strict";
+
+/* ---------- Storage helpers ---------- */
+const DB = {
+  get: (k, d) => JSON.parse(localStorage.getItem("anndaan_" + k)) ?? d,
+  set: (k, v) => localStorage.setItem("anndaan_" + k, JSON.stringify(v)),
+};
+const uid = () => Math.random().toString(36).slice(2, 10);
+const genOTP = () => String(Math.floor(1000 + Math.random() * 9000));
+const $ = (id) => document.getElementById(id);
+
+/* ---------- Toasts ---------- */
+function toast(msg, err = false) {
+  const t = document.createElement("div");
+  t.className = "toast" + (err ? " err" : "");
+  t.textContent = msg;
+  $("toastStack").appendChild(t);
+  setTimeout(() => t.remove(), 4200);
+}
+
+/* ---------- Seed demo data (first run) ---------- */
+function seed() {
+  if (DB.get("seeded", false)) return;
+  const restoId = "resto-demo";
+  DB.set("users", [
+    { id: restoId, name: "Spice Route Kitchen", email: "resto@demo.in", pass: "demo123", role: "restaurant", city: "Indiranagar, Bengaluru", fssai: "10012345678901", lat: 12.9719, lng: 77.6412 },
+    { id: "ngo-demo", name: "Anna Seva Foundation", email: "ngo@demo.in", pass: "demo123", role: "ngo", city: "Bengaluru", ngoReg: "KA/2019/0234567", verified: true },
+    { id: "user-demo", name: "Demo Customer", email: "user@demo.in", pass: "demo123", role: "customer", city: "Bengaluru" },
+  ]);
+  const now = Date.now();
+  DB.set("listings", [
+    mkListing({ restaurantId: restoId, restaurantName: "Spice Route Kitchen", city: "Indiranagar, Bengaluru", item: "Veg Biryani", qty: 8, veg: "veg", type: "paid", price: 60, orig: 120, windowMins: 90, lat: 12.9719, lng: 77.6412 }),
+    mkListing({ restaurantId: restoId, restaurantName: "Spice Route Kitchen", city: "Indiranagar, Bengaluru", item: "Paneer Butter Masala + Rotis", qty: 5, veg: "veg", type: "paid", price: 90, orig: 180, windowMins: 60, lat: 12.9719, lng: 77.6412 }),
+    mkListing({ restaurantId: restoId, restaurantName: "Spice Route Kitchen", city: "Indiranagar, Bengaluru", item: "Assorted Wedding Buffet Surplus", qty: 40, veg: "veg", type: "donation", price: 0, orig: 0, windowMins: 120, lat: 12.9719, lng: 77.6412 }),
+    mkListing({ restaurantId: restoId, restaurantName: "Spice Route Kitchen", city: "Indiranagar, Bengaluru", item: "Chicken Curry + Rice", qty: 6, veg: "nonveg", type: "paid", price: 75, orig: 150, windowMins: 45, lat: 12.9719, lng: 77.6412 }),
+  ]);
+  DB.set("seeded", true);
+}
+function mkListing(o) {
+  const now = Date.now();
+  return {
+    id: uid(), status: "open", claimedBy: null, claimedByName: null, otp: null,
+    createdAt: now,
+    expiresAt: now + o.windowMins * 60000,
+    escalateAt: o.type === "paid" ? now + Math.round(o.windowMins * 0.6) * 60000 : null,
+    escalated: false, prepTime: "recently prepared",
+    ...o,
+  };
+}
+
+/* ---------- Session ---------- */
+let session = DB.get("session", null);
+const users = () => DB.get("users", []);
+const listings = () => DB.get("listings", []);
+const saveListings = (l) => DB.set("listings", l);
+
+/* ---------- Geolocation ---------- */
+let userPos = null;
+function requestLocation() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    (p) => { userPos = { lat: p.coords.latitude, lng: p.coords.longitude }; renderAll(); },
+    () => {}, { timeout: 5000 }
+  );
+}
+function distKm(a, b) {
+  if (!a || !b || b.lat == null) return null;
+  const R = 6371, dLat = (b.lat - a.lat) * Math.PI / 180, dLng = (b.lng - a.lng) * Math.PI / 180;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+}
+
+/* ---------- Auth UI ---------- */
+let pendingRole = "customer";
+function openAuth(mode, role) {
+  closeModals();
+  $("authModal").classList.remove("hidden");
+  switchAuth(mode);
+  if (role) selectRole(role);
+}
+function switchAuth(mode) {
+  $("tabLogin").classList.toggle("active", mode === "login");
+  $("tabSignup").classList.toggle("active", mode === "signup");
+  $("loginForm").classList.toggle("hidden", mode !== "login");
+  $("signupForm").classList.toggle("hidden", mode !== "signup");
+}
+function selectRole(role) {
+  pendingRole = role;
+  document.querySelectorAll(".role-opt").forEach((b) => b.classList.toggle("active", b.dataset.role === role));
+  $("fssaiField").classList.toggle("hidden", role !== "restaurant");
+  $("ngoField").classList.toggle("hidden", role !== "ngo");
+  $("nameLabel").firstChild.textContent = role === "restaurant" ? "Restaurant name" : role === "ngo" ? "NGO name" : "Full name";
+  $("suFssai").required = role === "restaurant";
+  $("suNgoReg").required = role === "ngo";
+}
+document.querySelectorAll(".role-opt").forEach((b) => b.addEventListener("click", () => selectRole(b.dataset.role)));
+
+function handleSignup(e) {
+  e.preventDefault();
+  const email = $("suEmail").value.trim().toLowerCase();
+  if (users().some((u) => u.email === email)) return toast("An account with this email already exists.", true);
+  const u = {
+    id: uid(), name: $("suName").value.trim(), email, pass: $("suPass").value,
+    role: pendingRole, city: $("suCity").value.trim(),
+    fssai: $("suFssai").value.trim(), ngoReg: $("suNgoReg").value.trim(),
+    verified: pendingRole === "ngo",
+    lat: userPos?.lat, lng: userPos?.lng,
+  };
+  DB.set("users", [...users(), u]);
+  login(u);
+  toast(`Welcome to Anndaan, ${u.name}! 🌱`);
+}
+function handleLogin(e) {
+  e.preventDefault();
+  const u = users().find((x) => x.email === $("liEmail").value.trim().toLowerCase() && x.pass === $("liPass").value);
+  if (!u) return toast("Invalid email or password.", true);
+  login(u);
+  toast(`Welcome back, ${u.name}!`);
+}
+function login(u) {
+  session = { id: u.id, name: u.name, role: u.role };
+  DB.set("session", session);
+  closeModals();
+  renderAll();
+}
+function logout() {
+  session = null;
+  DB.set("session", null);
+  renderAll();
+  window.scrollTo({ top: 0 });
+}
+function goHome(e) { e.preventDefault(); if (!session) window.scrollTo({ top: 0, behavior: "smooth" }); }
+
+/* ---------- Modals ---------- */
+function closeModals() {
+  ["authModal", "listingModal", "otpModal"].forEach((id) => $(id).classList.add("hidden"));
+}
+document.querySelectorAll(".modal-overlay").forEach((m) =>
+  m.addEventListener("click", (e) => { if (e.target === m) closeModals(); })
+);
+
+/* ---------- Restaurant: create listing ---------- */
+function openListingModal() {
+  $("lsPrep").value = new Date().toTimeString().slice(0, 5);
+  $("listingModal").classList.remove("hidden");
+}
+function togglePriceFields() {
+  const donation = $("lsType").value === "donation";
+  $("lsPriceWrap").classList.toggle("hidden", donation);
+  $("lsOrigWrap").querySelector("label").classList.toggle("hidden", donation);
+  $("lsPrice").required = !donation;
+}
+function createListing(e) {
+  e.preventDefault();
+  // Food safety rule: prep time within last 4 hours
+  const [h, m] = $("lsPrep").value.split(":").map(Number);
+  const prep = new Date(); prep.setHours(h, m, 0, 0);
+  if (prep > new Date()) prep.setDate(prep.getDate() - 1);
+  const ageHrs = (Date.now() - prep.getTime()) / 3600000;
+  if (ageHrs > 4) return toast("⛔ FSSAI rule: food prepared more than 4 hours ago cannot be listed.", true);
+
+  const me = users().find((u) => u.id === session.id);
+  const type = $("lsType").value;
+  const l = mkListing({
+    restaurantId: me.id, restaurantName: me.name, city: me.city,
+    item: $("lsItem").value.trim(), qty: +$("lsQty").value, veg: $("lsVeg").value,
+    type, price: type === "donation" ? 0 : +$("lsPrice").value,
+    orig: type === "donation" ? 0 : +$("lsOrig").value,
+    windowMins: +$("lsWindow").value,
+    lat: me.lat ?? userPos?.lat, lng: me.lng ?? userPos?.lng,
+  });
+  l.prepTime = $("lsPrep").value;
+  saveListings([listings(), l].flat());
+  closeModals();
+  e.target.reset();
+  toast("📢 Listing published! Nearby claimants are being notified.");
+  renderAll();
+}
+
+/* ---------- Claiming ---------- */
+function claimListing(id) {
+  if (!session) return openAuth("login");
+  const all = listings();
+  const l = all.find((x) => x.id === id);
+  if (!l || l.status !== "open") return toast("This listing is no longer available.", true);
+  if (l.type === "donation" && !l.escalated && session.role !== "ngo")
+    return toast("Free donations can only be claimed by verified NGOs.", true);
+  if (l.escalated && session.role === "customer")
+    return toast("Escalated listings are reserved for NGOs.", true);
+  l.status = "claimed";
+  l.claimedBy = session.id;
+  l.claimedByName = session.name;
+  l.otp = genOTP();
+  saveListings(all);
+  showOTP(l);
+  renderAll();
+}
+function showOTP(l) {
+  $("otpModalBody").innerHTML = `
+    <button class="modal-x" onclick="closeModals()">✕</button>
+    <h2 style="margin-bottom:6px">🎉 Claimed!</h2>
+    <p style="color:var(--ink-3);font-size:.9rem">${l.item} · ${l.qty} servings<br>from <strong>${l.restaurantName}</strong></p>
+    <div class="otp-big">${l.otp}</div>
+    <p style="font-size:.85rem;color:var(--ink-3)">Show this OTP at pickup. It proves the handoff and confirms the food wasn't wasted.</p>
+    <button class="btn btn-primary btn-block" style="margin-top:18px" onclick="closeModals()">Got it</button>`;
+  $("otpModal").classList.remove("hidden");
+}
+
+/* ---------- Restaurant: verify pickup ---------- */
+function verifyPickup(id) {
+  const l = listings().find((x) => x.id === id);
+  $("otpModalBody").innerHTML = `
+    <button class="modal-x" onclick="closeModals()">✕</button>
+    <h2>Confirm handoff 🔐</h2>
+    <p style="color:var(--ink-3);font-size:.9rem">${l.item} — claimed by <strong>${l.claimedByName}</strong>.<br>Enter the OTP the claimant shows you:</p>
+    <input class="otp-input" id="otpEntry" maxlength="4" inputmode="numeric" placeholder="••••">
+    <button class="btn btn-primary btn-block" onclick="confirmOTP('${id}')">Confirm collection</button>`;
+  $("otpModal").classList.remove("hidden");
+  setTimeout(() => $("otpEntry").focus(), 100);
+}
+function confirmOTP(id) {
+  const all = listings();
+  const l = all.find((x) => x.id === id);
+  if ($("otpEntry").value.trim() === l.otp) {
+    l.status = "collected";
+    saveListings(all);
+    closeModals();
+    toast(`✅ Handoff confirmed! ${l.qty} servings rescued. 🌍`);
+    renderAll();
+  } else toast("Incorrect OTP. Please try again.", true);
+}
+function cancelListing(id) {
+  const all = listings();
+  const l = all.find((x) => x.id === id);
+  l.status = "cancelled";
+  saveListings(all);
+  toast("Listing cancelled.");
+  renderAll();
+}
+
+/* ---------- Timer engine: countdowns, escalation, expiry ---------- */
+function tick() {
+  const all = listings();
+  let changed = false;
+  const now = Date.now();
+  for (const l of all) {
+    if (l.status === "open" && now > l.expiresAt) { l.status = "expired"; changed = true; }
+    else if (l.status === "open" && l.type === "paid" && !l.escalated && l.escalateAt && now > l.escalateAt) {
+      l.escalated = true; l.price = 0; changed = true;
+      toast(`🤝 "${l.item}" unclaimed — auto-escalated to NGOs (now FREE).`);
+    }
   }
-  window.claimListing=function(id){var i=ld.find(function(x){return x.id===id});if(i)showToast('✅ Claimed! "'+i.name+'" from '+i.restaurant+'. Show OTP at pickup.','success')};
-  document.querySelectorAll('.filter-btn').forEach(function(b){b.addEventListener('click',function(){document.querySelectorAll('.filter-btn').forEach(function(x){x.classList.remove('active')});b.classList.add('active');af=b.dataset.filter;rl()})});
-  var si=document.getElementById('demoSearch');if(si)si.addEventListener('input',function(){sq=this.value.toLowerCase();rl()});
-  rl();
-  document.querySelectorAll('.faq-question').forEach(function(q){q.addEventListener('click',function(){var i=this.parentElement,a=i.classList.contains('active');document.querySelectorAll('.faq-item').forEach(function(f){f.classList.remove('active')});if(!a)i.classList.add('active')})});
-  var cf=document.getElementById('contactForm');
-  if(cf){cf.addEventListener('submit',function(e){e.preventDefault();var n=document.getElementById('formName').value.trim(),em=document.getElementById('formEmail').value.trim();var t=document.getElementById('formType').value,c=document.getElementById('formCity').value.trim();if(!n||!em){showToast('Please fill in your name and email.','error');return}showToast('🎉 Thanks, '+n+'! You\'re on the waitlist as a '+t+'. We\'ll notify you.','success');cf.reset()})}
-  var bt=document.getElementById('backToTop');window.addEventListener('scroll',function(){bt.classList.toggle('visible',window.scrollY>400)});bt.addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'})});
-  function showToast(m,t){var to=document.getElementById('toast');to.textContent=m;to.className='toast show '+(t||'');clearTimeout(to._timeout);to._timeout=setTimeout(function(){to.classList.remove('show')},4000)}window.showToast=showToast;
-  document.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){var h=this.getAttribute('href');if(h==='#'||!h)return;var t=document.querySelector(h);if(t){e.preventDefault();window.scrollTo({top:t.getBoundingClientRect().top+window.pageYOffset-80,behavior:'smooth'})}})});
-});
+  if (changed) { saveListings(all); renderAll(); }
+  else document.querySelectorAll("[data-expires]").forEach((el) => {
+    const rem = +el.dataset.expires - now;
+    el.textContent = fmtTimer(rem);
+    el.className = "l-timer " + (rem < 5 * 60000 ? "danger" : rem < 15 * 60000 ? "warn" : "");
+  });
+}
+function fmtTimer(ms) {
+  if (ms <= 0) return "expired";
+  const m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000);
+  return `⏱ ${m}:${String(s).padStart(2, "0")} left`;
+}
+setInterval(tick, 1000);
+
+/* ---------- Rendering ---------- */
+let filterText = "", sortBy = "time";
+
+function listingCard(l, viewer) {
+  const d = userPos ? distKm(userPos, l) : null;
+  const isMineResto = viewer?.role === "restaurant" && l.restaurantId === viewer.id;
+  const isMyClaim = viewer && l.claimedBy === viewer.id;
+  let action = "";
+
+  if (l.status === "open") {
+    if (!viewer) action = `<button class="btn btn-primary btn-sm" onclick="openAuth('login')">Log in to claim</button>`;
+    else if (isMineResto) action = `<button class="btn btn-danger btn-sm" onclick="cancelListing('${l.id}')">Cancel</button>`;
+    else {
+      const ngoOnly = (l.type === "donation" || l.escalated);
+      const canClaim = ngoOnly ? viewer.role === "ngo" : viewer.role === "customer" || viewer.role === "ngo";
+      action = canClaim
+        ? `<button class="btn btn-primary btn-sm" onclick="claimListing('${l.id}')">${l.price ? "Claim & Pay ₹" + l.price : "Claim Free"}</button>`
+        : `<span class="badge b-escalated">NGO only</span>`;
+    }
+  } else if (l.status === "claimed") {
+    if (isMineResto) action = `<button class="btn btn-primary btn-sm" onclick="verifyPickup('${l.id}')">Verify OTP</button>`;
+    else if (isMyClaim) action = `<span class="otp-chip">OTP ${l.otp}</span>`;
+    else action = `<span class="badge b-status">Claimed</span>`;
+  } else action = `<span class="badge b-status">${l.status}</span>`;
+
+  const timer = l.status === "open"
+    ? `<span class="l-timer" data-expires="${l.expiresAt}">${fmtTimer(l.expiresAt - Date.now())}</span>` : "";
+
+  return `<article class="l-card">
+    <div class="l-top">
+      <div class="l-badges">
+        ${l.escalated ? '<span class="badge b-escalated">Escalated → NGO</span>' :
+          l.type === "donation" ? '<span class="badge b-free">Free · NGO</span>' : '<span class="badge b-paid">Discounted</span>'}
+        <span class="badge ${l.veg === "veg" ? "b-veg" : "b-nonveg"}">${l.veg === "veg" ? "Veg" : "Non-veg"}</span>
+      </div>
+      ${timer}
+    </div>
+    <div class="l-body">
+      <h3>${l.item}</h3>
+      <div class="l-meta">🏪 ${l.restaurantName} · 📍 ${l.city}</div>
+      <div class="l-meta">🍽 ${l.qty} servings · 👨‍🍳 prepared ${l.prepTime}</div>
+      <div class="l-price">${l.price ? "₹" + l.price + (l.orig ? `<s>₹${l.orig}</s>` : "") : "FREE"}</div>
+    </div>
+    <div class="l-foot">
+      <span class="l-dist">${d != null ? "📍 " + d.toFixed(1) + " km away" : "📍 enable location"}</span>
+      ${action}
+    </div>
+  </article>`;
+}
+
+function renderAll() {
+  const me = session ? users().find((u) => u.id === session.id) : null;
+  // Nav
+  $("loginBtn").classList.toggle("hidden", !!session);
+  $("signupBtn").classList.toggle("hidden", !!session);
+  $("logoutBtn").classList.toggle("hidden", !session);
+  $("navUser").classList.toggle("hidden", !session);
+  if (session) $("navUser").textContent =
+    (session.role === "restaurant" ? "🏪 " : session.role === "ngo" ? "🤝 " : "🍛 ") + session.name;
+
+  $("landing").classList.toggle("hidden", !!session);
+  $("dashboard").classList.toggle("hidden", !session);
+  document.querySelectorAll(".landing-only").forEach((el) => el.classList.toggle("hidden", !!session));
+
+  // Public preview
+  if (!session) {
+    const open = listings().filter((l) => l.status === "open");
+    $("publicListings").innerHTML = open.length
+      ? open.slice(0, 6).map((l) => listingCard(l, null)).join("")
+      : `<p style="grid-column:1/-1;text-align:center;color:var(--ink-3)">No live listings right now — check back after dinner service! 🌙</p>`;
+    return;
+  }
+  renderDashboard(me);
+}
+
+function renderDashboard(me) {
+  const all = listings();
+  let mine, title, sub, stats;
+
+  if (me.role === "restaurant") {
+    $("newListingBtn").classList.remove("hidden");
+    mine = all.filter((l) => l.restaurantId === me.id);
+    title = `🏪 ${me.name}`;
+    sub = `FSSAI: ${me.fssai || "—"} · ${me.city}`;
+    const rescued = mine.filter((l) => l.status === "collected").reduce((s, l) => s + l.qty, 0);
+    stats = [
+      [mine.filter((l) => l.status === "open").length, "Active listings"],
+      [mine.filter((l) => l.status === "claimed").length, "Awaiting pickup"],
+      [rescued, "Servings rescued"],
+      ["₹" + mine.filter((l) => l.status === "collected" && l.type === "paid").reduce((s, l) => s + l.price * l.qty, 0), "Revenue recovered"],
+    ];
+    $("dashEmptyMsg").textContent = "List your first surplus item and turn tonight's write-off into impact.";
+  } else if (me.role === "ngo") {
+    $("newListingBtn").classList.add("hidden");
+    mine = all.filter((l) =>
+      (l.status === "open" && (l.type === "donation" || l.escalated)) || l.claimedBy === me.id);
+    title = `🤝 ${me.name}`;
+    sub = `Verified NGO · Reg: ${me.ngoReg || "—"} · Donations & escalated listings shown below`;
+    const fed = all.filter((l) => l.claimedBy === me.id && l.status === "collected").reduce((s, l) => s + l.qty, 0);
+    stats = [
+      [mine.filter((l) => l.status === "open").length, "Available to claim"],
+      [all.filter((l) => l.claimedBy === me.id && l.status === "claimed").length, "Pickups pending"],
+      [fed, "People fed"],
+    ];
+    $("dashEmptyMsg").textContent = "No donations available right now — you'll see escalated listings here instantly.";
+  } else {
+    $("newListingBtn").classList.add("hidden");
+    mine = all.filter((l) =>
+      (l.status === "open" && l.type === "paid" && !l.escalated) || l.claimedBy === me.id);
+    title = `🍛 Hey, ${me.name.split(" ")[0]}!`;
+    sub = "Discounted surplus near you — claim before the timer runs out.";
+    const saved = all.filter((l) => l.claimedBy === me.id && l.status === "collected")
+      .reduce((s, l) => s + (l.orig - l.price) * l.qty, 0);
+    stats = [
+      [mine.filter((l) => l.status === "open").length, "Deals live now"],
+      [all.filter((l) => l.claimedBy === me.id && l.status === "claimed").length, "Pickups pending"],
+      ["₹" + saved, "Money saved"],
+    ];
+    $("dashEmptyMsg").textContent = "No deals right now — most surplus appears after lunch & dinner service.";
+  }
+
+  $("dashTitle").textContent = title;
+  $("dashSub").textContent = sub;
+  $("dashStats").innerHTML = stats.map(([n, l]) => `<div class="ds-card"><h3>${n}</h3><p>${l}</p></div>`).join("");
+  $("dashToolbar").innerHTML = `
+    <input type="search" placeholder="🔍 Search food…" value="${filterText}" oninput="filterText=this.value;renderAll()">
+    <select onchange="sortBy=this.value;renderAll()">
+      <option value="time" ${sortBy === "time" ? "selected" : ""}>⏱ Expiring soonest</option>
+      <option value="dist" ${sortBy === "dist" ? "selected" : ""}>📍 Nearest first</option>
+      <option value="price" ${sortBy === "price" ? "selected" : ""}>💰 Cheapest first</option>
+    </select>
+    <button class="btn btn-outline btn-sm" onclick="requestLocation()">📍 Use my location</button>`;
+
+  let shown = mine.filter((l) => l.item.toLowerCase().includes(filterText.toLowerCase()));
+  shown.sort((a, b) => {
+    if (sortBy === "dist" && userPos) return (distKm(userPos, a) ?? 1e9) - (distKm(userPos, b) ?? 1e9);
+    if (sortBy === "price") return a.price - b.price;
+    return a.expiresAt - b.expiresAt;
+  });
+  // active first
+  const order = { open: 0, claimed: 1, collected: 2, expired: 3, cancelled: 4 };
+  shown.sort((a, b) => order[a.status] - order[b.status]);
+
+  $("dashListings").innerHTML = shown.map((l) => listingCard(l, me)).join("");
+  $("dashEmpty").classList.toggle("hidden", shown.length > 0);
+}
+
+/* ---------- Animated stat counters ---------- */
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((en) => {
+    if (!en.isIntersecting) return;
+    const el = en.target, target = +el.dataset.count;
+    let cur = 0; const step = Math.max(1, Math.ceil(target / 60));
+    const iv = setInterval(() => {
+      cur = Math.min(target, cur + step);
+      el.textContent = cur + (target >= 60 ? "M+" : target > 30 ? "%" : target === 14 ? "B" : "M");
+      if (cur >= target) clearInterval(iv);
+    }, 25);
+    io.unobserve(el);
+  });
+}, { threshold: 0.4 });
+document.querySelectorAll("[data-count]").forEach((el) => io.observe(el));
+
+/* ---------- Init ---------- */
+seed();
+requestLocation();
+renderAll();
+tick();
